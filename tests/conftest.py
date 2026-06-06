@@ -1,3 +1,4 @@
+import logging
 import pytest
 
 
@@ -21,3 +22,8 @@ def mock_k8s_client(mocker):
         'apps': mock_apps.return_value,
         'core': mock_core.return_value,
     }
+
+
+@pytest.fixture
+def logger():
+    return logging.getLogger('my_operator.test')

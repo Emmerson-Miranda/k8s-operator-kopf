@@ -4,7 +4,7 @@ from kubernetes.client.exceptions import ApiException
 
 from my_operator.config import (
     OPERATOR_GROUP, OPERATOR_VERSION, OPERATOR_PLURAL,
-    SERVICE_TYPE, HTTP_CONFLICT, HTTP_SERVER_ERROR,
+    SERVICE_TYPE, HTTP_CONFLICT, HTTP_TOO_MANY_REQUESTS, HTTP_SERVER_ERROR,
     RETRY_DELAY, MAX_RETRIES, RETRY_BACKOFF,
 )
 
@@ -52,7 +52,7 @@ def on_create(spec, name, namespace, logger, patch, **kwargs):
     except ApiException as e:
         if e.status == HTTP_CONFLICT:
             logger.warning(f"Deployment {name} already exists, skipping create")
-        elif e.status >= HTTP_SERVER_ERROR:
+        elif e.status == HTTP_TOO_MANY_REQUESTS or e.status >= HTTP_SERVER_ERROR:
             patch.status['message'] = f"Error: transient failure creating Deployment ({e.status})"
             logger.info(f"[CREATE] TemporaryError name={name} ns={namespace}")
             raise kopf.TemporaryError(f"Transient error creating Deployment: {e}", delay=RETRY_DELAY)
@@ -76,7 +76,7 @@ def on_create(spec, name, namespace, logger, patch, **kwargs):
     except ApiException as e:
         if e.status == HTTP_CONFLICT:
             logger.warning(f"Service {name} already exists, skipping create")
-        elif e.status >= HTTP_SERVER_ERROR:
+        elif e.status == HTTP_TOO_MANY_REQUESTS or e.status >= HTTP_SERVER_ERROR:
             patch.status['message'] = f"Error: transient failure creating Service ({e.status})"
             logger.info(f"[CREATE] TemporaryError name={name} ns={namespace}")
             raise kopf.TemporaryError(f"Transient error creating Service: {e}", delay=RETRY_DELAY)
