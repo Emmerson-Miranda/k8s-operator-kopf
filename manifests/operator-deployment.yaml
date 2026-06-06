@@ -18,3 +18,18 @@ spec:
         - name: operator
           image: my-operator:dev
           imagePullPolicy: Never
+          env:
+            - name: OPERATOR_GROUP
+              value: "demo.example.com"
+            - name: OPERATOR_VERSION
+              value: "v1"
+            - name: OPERATOR_PLURAL
+              value: "webapps"
+            - name: SERVICE_TYPE
+              value: "ClusterIP"
+            - name: RETRY_DELAY
+              value: "60"
+            - name: MAX_RETRIES
+              value: "10"
+            - name: RETRY_BACKOFF
+              value: "60"
