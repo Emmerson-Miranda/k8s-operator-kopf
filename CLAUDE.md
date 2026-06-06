@@ -32,6 +32,9 @@ kopf run my_operator/operator.py --all-namespaces
 
 # Watch WebApp resources
 kubectl get webapps -w
+
+# Scrape metrics from the host (works both locally and in-cluster via KinD extraPortMappings)
+curl http://localhost:8000/metrics
 ```
 
 ## Architecture
@@ -41,6 +44,8 @@ kubectl get webapps -w
 ```
 my_operator/              # Python package (named my_operator to avoid stdlib conflict)
   operator.py             # KOPF entry-point; imports and registers all handlers
+  config.py               # All env-var configuration (single source of truth)
+  metrics.py              # Prometheus metrics + sliding-window error collectors; HTTP server on METRICS_PORT
   handlers/
     create.py             # @kopf.on.create — creates Deployment + Service, patches status
     update.py             # @kopf.on.update — diffs spec, patches Deployment, updates status
@@ -48,6 +53,8 @@ my_operator/              # Python package (named my_operator to avoid stdlib co
 manifests/
   crd.yaml                # WebApp CRD (group: demo.example.com, version: v1) with status sub-resource
   rbac.yaml               # ServiceAccount, ClusterRole, ClusterRoleBinding for the operator
+  operator-deployment.yaml # Operator Deployment; exposes containerPort 8000 for metrics
+  metrics-service.yaml    # NodePort Service (nodePort: 30800) for Prometheus scraping
 tests/
   conftest.py             # Shared fixtures: fake_webapp dict, mock_k8s_client
   test_create.py          # Unit tests for create handler (mocked k8s client)
@@ -56,7 +63,7 @@ scripts/
   run_tests.sh            # Local unit test runner
   run_tests_kind.sh       # Full KinD integration test cycle
 Dockerfile                # python:3.12-slim; installs via pyproject.toml; CMD: kopf run
-kind-config.yaml          # Single control-plane KinD cluster config
+kind-config.yaml          # KinD cluster config; extraPortMappings: host:8000 → nodePort:30800
 pyproject.toml            # Dependencies: kopf, kubernetes, pytest, pytest-asyncio, pytest-mock
 ```
 

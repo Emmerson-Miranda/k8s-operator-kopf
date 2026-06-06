@@ -27,6 +27,8 @@ kind-up: docker-build
 
 	kubectl get pods
 
+	curl http://localhost:8000/metrics | grep handler | head -n 5
+
 	kubectl config current-context
 
 	echo "Cluster started with kind, you can run 'make kind-down' to delete it."

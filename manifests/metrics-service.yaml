@@ -10,10 +10,12 @@ metadata:
     prometheus.io/port: "8000"
     prometheus.io/path: "/metrics"
 spec:
+  type: NodePort
   selector:
     app: my-operator
   ports:
     - name: metrics
       port: 8000
-      targetPort: metrics
+      targetPort: 8000
+      nodePort: 30800
       protocol: TCP
