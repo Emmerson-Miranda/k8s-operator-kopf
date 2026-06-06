@@ -19,6 +19,8 @@ kubectl apply -f manifests-examples/example-update.yaml
 pytest tests/ -v
 TEST_EXIT=$?
 
+kubectl delete -f manifests-examples/example.yaml
+
 echo "--- Operator logs ---"
 kubectl logs deployment/my-operator --all-containers || true
 
