@@ -4,7 +4,7 @@ from kubernetes.client.exceptions import ApiException
 
 from my_operator.config import (
     OPERATOR_GROUP, OPERATOR_VERSION, OPERATOR_PLURAL,
-    HTTP_NOT_FOUND, HTTP_SERVER_ERROR,
+    HTTP_NOT_FOUND, HTTP_TOO_MANY_REQUESTS, HTTP_SERVER_ERROR,
     RETRY_DELAY, MAX_RETRIES, RETRY_BACKOFF,
 )
 
@@ -22,7 +22,7 @@ def on_delete(name, namespace, logger, **kwargs):
     except ApiException as e:
         if e.status == HTTP_NOT_FOUND:
             logger.warning(f"Deployment {name} already gone, skipping")
-        elif e.status >= HTTP_SERVER_ERROR:
+        elif e.status == HTTP_TOO_MANY_REQUESTS or e.status >= HTTP_SERVER_ERROR:
             logger.info(f"[DELETE] TemporaryError name={name} ns={namespace}")
             raise kopf.TemporaryError(f"Transient error deleting Deployment: {e}", delay=RETRY_DELAY)
         else:
@@ -35,7 +35,7 @@ def on_delete(name, namespace, logger, **kwargs):
     except ApiException as e:
         if e.status == HTTP_NOT_FOUND:
             logger.warning(f"Service {name} already gone, skipping")
-        elif e.status >= HTTP_SERVER_ERROR:
+        elif e.status == HTTP_TOO_MANY_REQUESTS or e.status >= HTTP_SERVER_ERROR:
             logger.info(f"[DELETE] TemporaryError name={name} ns={namespace}")
             raise kopf.TemporaryError(f"Transient error deleting Service: {e}", delay=RETRY_DELAY)
         else:
