@@ -18,6 +18,10 @@ spec:
         - name: operator
           image: my-operator:dev
           imagePullPolicy: Never
+          ports:
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
           env:
             - name: OPERATOR_GROUP
               value: "demo.example.com"
@@ -32,4 +36,8 @@ spec:
             - name: MAX_RETRIES
               value: "10"
             - name: RETRY_BACKOFF
+              value: "60"
+            - name: METRICS_PORT
+              value: "8000"
+            - name: ERROR_WINDOW_SECONDS
               value: "60"

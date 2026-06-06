@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-operator-metrics
+  namespace: default
+  labels:
+    app: my-operator
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app: my-operator
+  ports:
+    - name: metrics
+      port: 8000
+      targetPort: metrics
+      protocol: TCP
