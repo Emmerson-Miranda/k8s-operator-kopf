@@ -105,6 +105,64 @@ def test_window_collector_purges_old_events():
     assert collector._purge_and_count().get('create') == 1
 
 
+def test_window_collector_describe_yields_gauge_family():
+    from my_operator.metrics import _SlidingWindowCollector
+
+    collector = _SlidingWindowCollector('test_describe', 'A description', window_seconds=60)
+    families = list(collector.describe())
+
+    assert len(families) == 1
+    assert families[0].name == 'test_describe'
+
+
+def test_window_collector_collect_yields_label_samples():
+    from my_operator.metrics import _SlidingWindowCollector
+
+    collector = _SlidingWindowCollector('test_collect', 'A description', window_seconds=60)
+    collector.record('create')
+    collector.record('create')
+    collector.record('delete')
+
+    families = list(collector.collect())
+    assert len(families) == 1
+    samples = {s.labels['handler']: s.value for s in families[0].samples}
+    assert samples['create'] == 2
+    assert samples['delete'] == 1
+
+
+def test_start_metrics_starts_http_server(mocker, logger):
+    from my_operator.config import METRICS_PORT
+    from my_operator.metrics import start_metrics
+    mock_server = mocker.patch('my_operator.metrics.start_http_server')
+
+    start_metrics(logger)
+
+    mock_server.assert_called_once_with(METRICS_PORT)
+
+
+def test_track_handler_generic_exception_records_error_event():
+    from my_operator.metrics import track_handler, EVENTS_TOTAL
+
+    with pytest.raises(RuntimeError):
+        with track_handler('create'):
+            raise RuntimeError("unexpected failure")
+
+    assert _sample(EVENTS_TOTAL, handler='create', status='error') == 1.0
+
+
+def test_track_handler_generic_exception_not_recorded_in_windows():
+    from my_operator.metrics import (
+        track_handler, PERMANENT_ERRORS_LAST_MINUTE, TEMPORARY_ERRORS_LAST_MINUTE,
+    )
+
+    with pytest.raises(RuntimeError):
+        with track_handler('delete'):
+            raise RuntimeError("unexpected")
+
+    assert _window_count(PERMANENT_ERRORS_LAST_MINUTE, 'delete') == 0
+    assert _window_count(TEMPORARY_ERRORS_LAST_MINUTE, 'delete') == 0
+
+
 # ---------------------------------------------------------------------------
 # Create handler
 # ---------------------------------------------------------------------------
